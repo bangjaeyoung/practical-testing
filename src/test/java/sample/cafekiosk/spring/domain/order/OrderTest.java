@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sample.cafekiosk.spring.domain.order.OrderStatus.PAYMENT_COMPLETED;
 import static sample.cafekiosk.spring.domain.product.ProductSellingStatus.SELLING;
 import static sample.cafekiosk.spring.domain.product.ProductType.HANDMADE;
 
@@ -60,6 +61,24 @@ class OrderTest {
 
         // then
         assertThat(order.getRegisteredDateTime()).isEqualTo(registeredDateTime);
+    }
+
+    @DisplayName("주문의 상태를 업데이트한다.")
+    @Test
+    void updateOrderStatus() {
+        // given
+        LocalDateTime registeredDateTime = LocalDateTime.now();
+        List<Product> products = List.of(
+            createProduct("001", 1000),
+            createProduct("002", 2000)
+        );
+        Order order = Order.create(products, registeredDateTime);
+
+        // when
+        order.updateOrderStatus(PAYMENT_COMPLETED);
+
+        // then
+        assertThat(order.getOrderStatus()).isEqualTo(PAYMENT_COMPLETED);
     }
 
     private Product createProduct(String productNumber, int price) {

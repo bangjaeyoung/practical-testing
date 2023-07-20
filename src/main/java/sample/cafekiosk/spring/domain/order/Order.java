@@ -57,4 +57,8 @@ public class Order extends BaseEntity {
             .mapToInt(Product::getPrice)
             .sum();
     }
+
+    public void updateOrderStatus(OrderStatus orderStatus) {
+        this.orderStatus = orderStatus;
+    }
 }

@@ -1,10 +1,11 @@
 package sample.cafekiosk.spring.domain.order;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
+import sample.cafekiosk.spring.IntegrationTestSupport;
 import sample.cafekiosk.spring.domain.product.Product;
 import sample.cafekiosk.spring.domain.product.ProductRepository;
 import sample.cafekiosk.spring.domain.product.ProductSellingStatus;
@@ -19,9 +20,8 @@ import static sample.cafekiosk.spring.domain.order.OrderStatus.PAYMENT_COMPLETED
 import static sample.cafekiosk.spring.domain.product.ProductSellingStatus.*;
 import static sample.cafekiosk.spring.domain.product.ProductType.HANDMADE;
 
-@DataJpaTest
-@ActiveProfiles("test")
-class OrderRepositoryTest {
+@Transactional
+class OrderRepositoryTest extends IntegrationTestSupport {
 
     @Autowired
     private OrderRepository orderRepository;
@@ -33,7 +33,11 @@ class OrderRepositoryTest {
     @Test
     void findOrdersBy() {
         // given
+        LocalDateTime startDateTime = LocalDateTime.of(2023, 7, 17, 0, 1);
         LocalDateTime targetDateTime = LocalDateTime.of(2023, 7, 17, 23, 0);
+        LocalDateTime endDateTime = LocalDateTime.of(2023, 7, 17, 23, 59);
+
+        OrderStatus targetOrderStatus = PAYMENT_COMPLETED;
 
         Product product1 = createProduct("001", HANDMADE, SELLING, "아메리카노", 4000);
         Product product2 = createProduct("002", HANDMADE, HOLD, "카페라떼", 4500);
@@ -44,18 +48,20 @@ class OrderRepositoryTest {
         Order order2 = Order.create(List.of(product2, product3), LocalDateTime.of(2023, 7, 18, 0, 0));
         orderRepository.saveAll(List.of(order1, order2));
 
+        List.of(order1, order2).forEach(i -> i.updateOrderStatus(targetOrderStatus));
+
         // when
         List<Order> ordersBy = orderRepository.findOrdersBy(
-            LocalDateTime.of(2023, 7, 17, 0, 1),
-            LocalDateTime.of(2023, 7, 17, 23, 59),
-            PAYMENT_COMPLETED
+            startDateTime,
+            endDateTime,
+            targetOrderStatus
         );
 
         // then
         assertThat(ordersBy).hasSize(1)
             .extracting("orderStatus", "registeredDateTime")
             .containsExactlyInAnyOrder(
-                tuple(PAYMENT_COMPLETED, targetDateTime)
+                tuple(targetOrderStatus, targetDateTime)
             );
     }
 
